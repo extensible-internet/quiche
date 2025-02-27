@@ -5156,6 +5156,12 @@ impl Connection {
 
         match direction {
             Shutdown::Read => {
+                let unread_bytes = stream.recv.max_off() - stream.recv.off_front();
+                self.flow_control.add_consumed(unread_bytes);
+                if self.should_update_max_data() {
+                    self.almost_full = true;
+                }
+
                 stream.recv.shutdown()?;
 
                 if !stream.recv.is_fin() {
